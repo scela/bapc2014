@@ -3,10 +3,14 @@ package bapc2013;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Stack;
+
+import javax.naming.LinkLoopException;
 
 public class J {
 
@@ -90,14 +94,7 @@ public class J {
 		final int[][] d = new int[nrows][ncols];
 		int[] dx = new int[] {-1,0,1, 0};
 		int[] dy = new int[] {0 ,1,0,-1};
-		PriorityQueue<Point> pq = new PriorityQueue<Point>(ncols*nrows,new Comparator<Point>() {
-			@Override
-			public int compare(Point o1, Point o2) {
-			
-				return d[o1.x][o1.y]-d[o2.x][o2.y];
-			}
-		});
-		pq.add(p);
+		ArrayDeque<Point> ad = new ArrayDeque<Point>(nrows*ncols);
 		
 		for (int i = 0; i < nrows; i++) {
 			for (int j = 0; j < ncols; j++) {
@@ -110,9 +107,9 @@ public class J {
 			}
 		}
 		d[p.x][p.y]=0;
-		pq.add(p);
-		while (!pq.isEmpty()){
-			Point pop = pq.poll();
+		ad.addFirst(p);
+		while (!ad.isEmpty()){
+			Point pop = ad.pop();
 			for (int k=0;k<4;k++){
 				int nx = pop.x+dx[k];
 				int ny = pop.y+dy[k];
@@ -120,7 +117,12 @@ public class J {
 				Point np = new Point(nx,ny);
 				d[nx][ny] = Math.min(d[nx][ny], (t[nx][ny]=='#'?1:0)+d[pop.x][pop.y]);
 //				debugint(d);
-				if (!handled[nx][ny]) pq.add(np);
+				if (!handled[nx][ny]) {
+					if (t[nx][ny]=='#')
+					ad.addLast(np);
+					else 
+						ad.addFirst(np);
+				}
 			}
 			handled[pop.x][pop.y]=true;
 		}
@@ -129,21 +131,6 @@ public class J {
 		
 		
 		return d;
-	}
-
-	private Point removeLeast(ArrayList<Point> stack, int[][] d) {
-		int min = Integer.MAX_VALUE;
-		int mini=-1;
-		for (int i=0;i<stack.size();i++){
-			Point point = stack.get(i);
-			int m = d[point.x][point.y];
-			if (min>m) {
-				min = m;
-				mini=i;
-			}
-		}
-
-		return stack.remove(mini);
 	}
 
 	private void debugint(int[][] d) {
@@ -161,6 +148,7 @@ public class J {
 
 	private void debug(char[][] t) {
 		for (int i = 0; i < nrows; i++) {
+			System.err.print(i+" ");
 			for (int j = 0; j < ncols; j++) {
 				System.err.print(t[i][j] + " ");
 			}
@@ -178,11 +166,6 @@ class Point {
 		super();
 		this.x = x;
 		this.y = y;
-	}
-	@Override
-	public boolean equals(Object obj) {
-		Point p = (Point) obj;
-		return p.x==x && p.y==y;
 	}
 	@Override
 	public String toString() {
